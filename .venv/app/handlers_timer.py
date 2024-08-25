@@ -12,7 +12,6 @@ from aiogram.methods.send_location import SendLocation
 
 router_timer = Router()
 
-
 class Timer(StatesGroup):
     seconds = State()
 

@@ -8,7 +8,6 @@ from handlers import router
 from handlers_time import router_time
 from handlers_timer import router_timer
 
-
 async def main():
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()

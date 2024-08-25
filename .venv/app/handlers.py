@@ -12,7 +12,6 @@ from aiogram.methods.send_location import SendLocation
 
 router = Router()
 
-
 class Weather(StatesGroup):
     method = State()
     location = State()
