@@ -1,3 +1,2 @@
 API_TOKEN = "7038453997:AAEBv4yRNGmryQUtCB1yZZEmn-B2MGKPLM0"
 open_weather_token = "147bbc5b8a07979266dbee4bb927e201"
-

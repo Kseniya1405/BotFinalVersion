@@ -1,6 +1,8 @@
+import asyncio
 import datetime
 
 import requests
+import requests.exceptions
 from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
@@ -59,6 +61,8 @@ async def weather_step_two(msg: Message, state: FSMContext):
         await state.update_data(location='None')
         await state.set_state(Weather.city_name)
         await msg.answer('Название города:')
+    else:
+        await msg.answer('Нажмите на значок клавиатуры, справа от строки ввода сообщений, и выберите один из параметров "По городу" или "По местоположению"')
 
 
 @router.message(Weather.location)
@@ -71,8 +75,8 @@ async def location_handler(msg: Message, state: FSMContext):
     try:
         # Делаем запрос с сайта.
         r = requests.get(
-            f"http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={open_weather_token}&units=metric"
-        )
+            f"http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={open_weather_token}&units=metric",
+        timeout = 30)
         data = r.json()
         city = data['name']
         cur_weather = data['main']['temp']
@@ -84,8 +88,15 @@ async def location_handler(msg: Message, state: FSMContext):
                          f"Погода в городе {city}\nТемпература: {cur_weather}C°\n"
                          f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст."
                          )
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова или выбрать другое действие, вернитесь в главное меню',
+                         reply_markup=kb.menu)
     except AttributeError:
         await msg.answer("Попробуйте повторить запрос, на этот раз укажите город")
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова, вернитесь в главное меню', reply_markup=kb.menu)
+    except requests.exceptions.Timeout:
+        await msg.answer("Попробуйте повторить запрос - weather.")
 
 
 @router.message(Weather.city_name)
@@ -98,7 +109,7 @@ async def weather_step_three(msg: Message, state: FSMContext):
     try:
         # Делаем запрос с сайта.
         r = requests.get(
-            f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={open_weather_token}&units=metric"
+            f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={open_weather_token}&units=metric", timeout = 30
         )
         data = r.json()
         city = data['name']
@@ -111,7 +122,13 @@ async def weather_step_three(msg: Message, state: FSMContext):
                 f"Погода в городе {city}\nТемпература: {cur_weather}C°\n"
                 f"Влажность: {humidity}%\nДавление: {pressure} мм.рт.ст."
                 )
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова или выбрать другое действие, вернитесь в главное меню',
+                         reply_markup=kb.menu)
     except KeyError:
         await msg.answer("Введите другое наименование, пожалуйста ")
-
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова, вернитесь в главное меню', reply_markup=kb.menu)
+    except requests.exceptions.Timeout:
+        await msg.answer("Попробуйте повторить запрос - weather.")
 

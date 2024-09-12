@@ -1,6 +1,8 @@
+import asyncio
 import datetime
 
 import requests
+import requests.exceptions
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -45,6 +47,8 @@ async def time_step_two(msg: Message, state: FSMContext):
         await state.update_data(location='None')
         await state.set_state(Time.city_name)
         await msg.answer('Название города:')
+    else:
+        await msg.answer('Нажмите на значок клавиатуры, справа от строки ввода сообщений, и выберите один из параметров "По городу" или "По местоположению"')
 
 
 @router_time.message(Time.location)
@@ -57,7 +61,7 @@ async def location_time_handler(msg: Message, state: FSMContext):
     try:
         # Делаем запрос с сайта.
         r = requests.get(
-            f"http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={open_weather_token}&units=metric"
+            f"http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={open_weather_token}&units=metric", timeout = 30
         )
         data = r.json()
         timezone = data['timezone']
@@ -66,8 +70,16 @@ async def location_time_handler(msg: Message, state: FSMContext):
         tz = datetime.timezone(datetime.timedelta(seconds=int(timezone)))
         # Выводим время данной временной зоны в указанном формате.
         await msg.answer(f"***{datetime.datetime.now(tz=tz).strftime('%Y-%m-%d %H:%M:%S')}***")
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова или выбрать другое действие, вернитесь в главное меню',
+                         reply_markup=kb.menu)
     except AttributeError:
         await msg.answer("Попробуйте повторить запрос, на этот раз укажите город")
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова, вернитесь в главное меню', reply_markup=kb.menu)
+    except requests.exceptions.Timeout:
+        await msg.answer("Попробуйте повторить запрос - time.")
+
 
 
 @router_time.message(Time.city_name)
@@ -80,7 +92,7 @@ async def time_step_three(msg: Message, state: FSMContext):
     try:
         # Делаем запрос с сайта.
         r = requests.get(
-            f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={open_weather_token}&units=metric"
+            f"http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={open_weather_token}&units=metric", timeout = 30
         )
         data = r.json()
         timezone = data['timezone']
@@ -89,5 +101,12 @@ async def time_step_three(msg: Message, state: FSMContext):
         tz = datetime.timezone(datetime.timedelta(seconds=int(timezone)))
         # Выводим время данной временной зоны в указанном формате.
         await msg.answer(f"***{datetime.datetime.now(tz=tz).strftime('%Y-%m-%d %H:%M:%S')}***")
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова или выбрать другое действие, вернитесь в главное меню',
+                         reply_markup=kb.menu)
     except KeyError:
         await msg.answer("Введите другое наименование, пожалуйста ")
+        await asyncio.sleep(1)
+        await msg.answer('Чтобы попробовать снова, вернитесь в главное меню', reply_markup=kb.menu)
+    except requests.exceptions.Timeout:
+        await msg.answer("Попробуйте повторить запрос - time.")
